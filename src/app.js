@@ -6,9 +6,11 @@ const onerror = require('koa-onerror')
 const bodyparser = require('koa-bodyparser')
 const logger = require('koa-logger')
 
+// 注册路由
 const index = require('./routes/index')
 const users = require('./routes/users')
 
+const userViewRouter = require('./routes/views/users')
 // error handler
 onerror(app)
 
@@ -35,6 +37,8 @@ app.use(async (ctx, next) => {
 // routes
 app.use(index.routes(), index.allowedMethods())
 app.use(users.routes(), users.allowedMethods())
+app.use(userViewRouter.routes(),userViewRouter.allowedMethods())
+
 
 // error-handling
 app.on('error', (err, ctx) => {
