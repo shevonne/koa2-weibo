@@ -9,11 +9,12 @@ const {REDIS_CONF} = require("./../conf/db");
 //创建客户端
 const redisClient = redis.createClient(REDIS_CONF.port,REDIS_CONF.host);
 
-//监听错误
-redisClient.on("error", err => {
-   console.log("error",err)
-})
-
+//创建连接
+(async function(){
+    await redisClient.connect().then(()=>{
+        console.log("redis connect success")
+    }).catch(console.error)
+})()
 
 /**
  * redis set 
@@ -21,15 +22,15 @@ redisClient.on("error", err => {
  * @param {string} val 值
  * @param {number} timout 过期时间
  */
-function set(key,val,timout = 60 * 60){
+async function set(key,val,timout = 60 * 60){
     //对象转字符串存储
-    if(typeof(val) === "object"){
+    if(typeof val === "object"){
         val = JSON.stringify(val);
     }
     //设置值
-    redisClient.set(key,val);
+    await redisClient.set(key,val);
     //过期时间
-    redisClient.expire(key,timout)
+    await redisClient.expire(key,timout)
 }
 
 
@@ -38,26 +39,17 @@ function set(key,val,timout = 60 * 60){
  * @param {string} key 
  * 
  */
-function get(key){
-    const promise = new Promise((resolve,reject) => {
-        redisClient.get(key,(err,val)=>{
-            if(err){
-                reject(err)
-                return
-            }
-            if(val == null){
-                resolve(null)
-                return
-            }
-            //取值
-            try {
-                resolve(JSON.parse(val))
-            } catch (error) {
-                resolve(val)
-            }
-        })
-    })
-    return promise;
+async function get(key){
+    try {
+        let val = redisClient.get(key);
+        if(val == null) return val;
+        try {
+            val = JSON.parse(val); //尝试转换为js对象
+        } catch (error) {}
+        return val;
+    } catch (err) {
+        throw err
+    }
 }
 
 module.exports = {
